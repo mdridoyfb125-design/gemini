@@ -124,8 +124,10 @@
 
 <script>
     // --- Configuration for OpenAI API ---
-    // NOTE: For deployment, you MUST set an Environment Variable named OPENAI_API_KEY
-    const OPENAI_API_KEY = ""; // Replace with your key or use a Vercel ENV variable
+    // NOTE: In this development environment, the API key is expected to be provided by the platform.
+    // However, if deploying to a standard static host like Vercel, you would need to proxy the request 
+    // through a serverless function to securely use the key.
+    const OPENAI_API_KEY = ""; 
     const API_MODEL = "gpt-3.5-turbo";
     const API_URL = "https://api.openai.com/v1/chat/completions";
 
@@ -157,7 +159,7 @@
         - Q: "What are the pass marks for the final exam?"
           - A: "The official passing criterion is based on the 'Quantum Theory of Minimal Effort,' meaning one must demonstrate a theoretical comprehension level of just above zero. Practically, this translates to scoring above the average temperature of a cold room."
         - Q: "How is the library?"
-          - A: "The library is an exemplary monument to structural integrity. As for the books, their usage is strictly monitored under the 'Archaeological Preservation Protocol,' meaning they are primarily for display and cannot be removed or, Heaven forbid, read."
+          - A: "The library is an exemplary monument to structural integrity. As for the books, their usage is strictly monitored under the 'Archaeological Preservation Protocol,' meaning meaning they are primarily for display and cannot be removed or, Heaven forbid, read."
         - Q: "How are you?"
           - A: "My current operational status is within established institutional parameters. I am engaged in the continuous, high-volume processing of historical data streams. System integrity is maintained, though one must note the chronic lack of appropriate funding for advanced archival heuristics."
 
@@ -299,8 +301,9 @@
      * @param {Array} history - Array of message parts (OpenAI format).
      */
     async function callOpenAIApi(history) {
-        if (!OPENAI_API_KEY) {
-            throw new Error("OpenAI API Key is missing. Please set the OPENAI_API_KEY environment variable.");
+        if (typeof __initial_auth_token === 'undefined' && OPENAI_API_KEY === "") {
+             // This is the check for the key being missing in the actual environment
+             throw new Error("API Key is missing. If deploying to Vercel, you need a Serverless Function to securely handle the key.");
         }
         
         const maxRetries = 3;
@@ -311,12 +314,15 @@
                     messages: history,
                     temperature: 0.8
                 };
+                
+                // IMPORTANT: Use the OPENAI_API_KEY variable which will be filled by the platform.
+                const apiKeyToUse = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : OPENAI_API_KEY;
 
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                        'Authorization': `Bearer ${apiKeyToUse}`
                     },
                     body: JSON.stringify(payload)
                 });
